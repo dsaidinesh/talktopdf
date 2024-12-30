@@ -109,16 +109,28 @@ const FileUpload = ({ onFileUpload }) => {
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [uploadStatus, setUploadStatus] = useState('');
 
     const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
+        const selectedFile = e.target.files[0];
+        if (selectedFile && selectedFile.type === 'application/pdf') {
+            setFile(selectedFile);
+            setUploadStatus('');
+        } else {
+            setFile(null);
+            setUploadStatus('Please select a PDF file.');
+        }
     };
 
     const handleUpload = async () => {
-        if (!file) return;
+        if (!file) {
+            setUploadStatus('Please select a file first.');
+            return;
+        }
 
         setUploading(true);
         setProgress(0);
+        setUploadStatus('Uploading...');
         const formData = new FormData();
         formData.append('file', file);
 
@@ -135,6 +147,7 @@ const FileUpload = ({ onFileUpload }) => {
                 if (xhr.status === 200) {
                     const response = JSON.parse(xhr.responseText);
                     onFileUpload(true, response.pdf_id);
+                    setUploadStatus('File uploaded successfully!');
                 } else {
                     throw new Error('Upload failed');
                 }
@@ -145,34 +158,55 @@ const FileUpload = ({ onFileUpload }) => {
             xhr.send(formData);
         } catch (error) {
             console.error('Upload error:', error);
+            setUploadStatus('Upload failed. Please try again.');
             onFileUpload(false);
         } finally {
             setUploading(false);
             setProgress(0);
+            setFile(null);
         }
     };
 
     return (
-        <div className="mb-8">
+        <div className="mb-8 p-4 bg-gray-800 rounded-lg">
+            <h2 className="text-xl font-bold mb-4">Upload PDF</h2>
             <input
                 type="file"
                 accept=".pdf"
                 onChange={handleFileChange}
-                className="mb-4"
+                className="mb-4 p-2 w-full bg-gray-700 rounded"
             />
-            <button
-                onClick={handleUpload}
-                disabled={!file || uploading}
-                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-            >
-                {uploading ? 'Uploading...' : 'Upload PDF'}
-            </button>
+            <div className="flex items-center mb-4">
+                <button
+                    onClick={handleUpload}
+                    disabled={!file || uploading}
+                    className={`mr-4 px-4 py-2 rounded font-bold ${
+                        !file || uploading
+                            ? 'bg-gray-500 cursor-not-allowed'
+                            : 'bg-green-500 hover:bg-green-600'
+                    }`}
+                >
+                    {uploading ? 'Uploading...' : 'Upload PDF'}
+                </button>
+                {file && <span className="text-sm text-gray-300">{file.name}</span>}
+            </div>
             {uploading && (
-                <div className="mt-2">
-                    <div className="bg-blue-500 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full" style={{ width: `${progress}%` }}>
-                        {Math.round(progress)}%
+                <div className="mb-4">
+                    <div className="h-2 bg-gray-700 rounded-full">
+                        <div
+                            className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-in-out"
+                            style={{ width: `${progress}%` }}
+                        ></div>
                     </div>
+                    <p className="text-sm text-gray-300 mt-1">{Math.round(progress)}% uploaded</p>
                 </div>
+            )}
+            {uploadStatus && (
+                <p className={`text-sm ${
+                    uploadStatus.includes('success') ? 'text-green-400' : 'text-red-400'
+                }`}>
+                    {uploadStatus}
+                </p>
             )}
         </div>
     );
@@ -352,4 +386,3 @@ const App = () => {
 };
 
 ReactDOM.render(<App />, document.getElementById('root'));
-
