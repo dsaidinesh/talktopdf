@@ -3,7 +3,7 @@ const { useState, useEffect, useCallback, useRef } = React;
 const Microphone = ({ isListening, onClick }) => (
     <button
         onClick={onClick}
-        className={`microphone w-40 h-40 rounded-full flex items-center justify-center ${
+        className={`w-40 h-40 rounded-full flex items-center justify-center transition-all duration-300 ${
             isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500 hover:bg-blue-600'
         }`}
     >
@@ -32,7 +32,7 @@ const VoiceVisualizer = ({ isListening }) => {
             if (isListening && analyser) {
                 analyser.getByteTimeDomainData(dataArray);
                 ctx.lineWidth = 2;
-                ctx.strokeStyle = 'rgb(255, 255, 255)';
+                ctx.strokeStyle = 'rgb(59, 130, 246)';
                 ctx.beginPath();
                 const sliceWidth = canvas.width * 1.0 / dataArray.length;
                 let x = 0;
@@ -87,7 +87,7 @@ const VoiceVisualizer = ({ isListening }) => {
 };
 
 const StatusIndicator = ({ status }) => (
-    <div className="mt-8 text-2xl font-bold text-center animate-fade-in">
+    <div className="mt-4 text-xl font-semibold text-center animate-fade-in">
         {status}
     </div>
 );
@@ -168,30 +168,39 @@ const FileUpload = ({ onFileUpload }) => {
     };
 
     return (
-        <div className="mb-8 p-4 bg-gray-800 rounded-lg">
-            <h2 className="text-xl font-bold mb-4">Upload PDF</h2>
-            <input
-                type="file"
-                accept=".pdf"
-                onChange={handleFileChange}
-                className="mb-4 p-2 w-full bg-gray-700 rounded"
-            />
+        <div className="mb-6 p-4 bg-gray-800 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold mb-4 text-blue-300">Upload PDF</h2>
             <div className="flex items-center mb-4">
+                <label className="w-full flex flex-col items-center px-4 py-6 bg-gray-700 text-blue rounded-lg shadow-lg tracking-wide uppercase border border-blue cursor-pointer hover:bg-blue-500 hover:text-white">
+                    <svg className="w-8 h-8" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z" />
+                    </svg>
+                    <span className="mt-2 text-base leading-normal">{file ? file.name : 'Select a PDF file'}</span>
+                    <input type='file' className="hidden" onChange={handleFileChange} accept=".pdf" />
+                </label>
+            </div>
+            <div className="flex items-center justify-between">
                 <button
                     onClick={handleUpload}
                     disabled={!file || uploading}
-                    className={`mr-4 px-4 py-2 rounded font-bold ${
+                    className={`px-4 py-2 rounded font-bold text-white ${
                         !file || uploading
                             ? 'bg-gray-500 cursor-not-allowed'
-                            : 'bg-green-500 hover:bg-green-600'
+                            : 'bg-blue-500 hover:bg-blue-600'
                     }`}
                 >
                     {uploading ? 'Uploading...' : 'Upload PDF'}
                 </button>
-                {file && <span className="text-sm text-gray-300">{file.name}</span>}
+                {uploadStatus && (
+                    <p className={`text-sm ${
+                        uploadStatus.includes('success') ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                        {uploadStatus}
+                    </p>
+                )}
             </div>
             {uploading && (
-                <div className="mb-4">
+                <div className="mt-4">
                     <div className="h-2 bg-gray-700 rounded-full">
                         <div
                             className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-in-out"
@@ -201,27 +210,20 @@ const FileUpload = ({ onFileUpload }) => {
                     <p className="text-sm text-gray-300 mt-1">{Math.round(progress)}% uploaded</p>
                 </div>
             )}
-            {uploadStatus && (
-                <p className={`text-sm ${
-                    uploadStatus.includes('success') ? 'text-green-400' : 'text-red-400'
-                }`}>
-                    {uploadStatus}
-                </p>
-            )}
         </div>
     );
 };
 
 const PDFSelector = ({ pdfs, selectedPDF, onSelect }) => (
-    <div className="mb-4">
-        <label htmlFor="pdf-select" className="block text-sm font-medium text-gray-300 mb-2">Select PDF:</label>
+    <div className="mb-6 p-4 bg-gray-800 rounded-lg shadow-md">
+        <label htmlFor="pdf-select" className="block text-lg font-medium text-blue-300 mb-2">Select PDF to Query:</label>
         <select
             id="pdf-select"
             value={selectedPDF}
             onChange={(e) => onSelect(e.target.value)}
-            className="bg-gray-700 text-white rounded-md px-3 py-2 w-full"
+            className="bg-gray-700 text-white rounded-md px-4 py-2 w-full border border-gray-600 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
         >
-            <option value="">Select a PDF</option>
+            <option value="">Choose a PDF</option>
             {pdfs.map((pdf) => (
                 <option key={pdf.id} value={pdf.id}>{pdf.filename}</option>
             ))}
@@ -230,13 +232,16 @@ const PDFSelector = ({ pdfs, selectedPDF, onSelect }) => (
 );
 
 const TranscriptDisplay = ({ transcript }) => (
-    <div className="mt-8 bg-gray-800 p-4 rounded-lg max-h-60 overflow-y-auto">
-        <h3 className="text-xl font-bold mb-2">Transcript</h3>
-        {transcript.map((entry, index) => (
-            <div key={index} className={`mb-2 ${entry.speaker === 'User' ? 'text-blue-300' : 'text-green-300'}`}>
-                <strong>{entry.speaker}:</strong> {entry.text}
-            </div>
-        ))}
+    <div className="h-[calc(100vh-2rem)] bg-gray-800 p-4 rounded-lg shadow-md overflow-y-auto">
+        <h3 className="text-xl font-bold mb-4 text-blue-300">Conversation History</h3>
+        <div className="space-y-4">
+            {transcript.map((entry, index) => (
+                <div key={index} className={`p-3 rounded-lg ${entry.speaker === 'User' ? 'bg-blue-900 text-blue-100 ml-auto' : 'bg-green-900 text-green-100'} max-w-[80%]`}>
+                    <strong className="block mb-1">{entry.speaker}:</strong>
+                    <p>{entry.text}</p>
+                </div>
+            ))}
+        </div>
     </div>
 );
 
@@ -371,18 +376,28 @@ const App = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden p-4">
-            <BackgroundTransition isResponding={isResponding} />
-            <h1 className="text-4xl font-bold mb-8 relative z-10">Enhanced Voice Chatbot with PDF RAG</h1>
-            <FileUpload onFileUpload={handleFileUpload} />
-            <PDFSelector pdfs={pdfs} selectedPDF={selectedPDF} onSelect={setSelectedPDF} />
-            <Microphone isListening={isListening} onClick={toggleListening} />
-            <VoiceVisualizer isListening={isListening} />
-            <InterruptButton onClick={interruptAI} isVisible={isResponding} />
-            <StatusIndicator status={status} />
-            <TranscriptDisplay transcript={transcript} />
+        <div className="min-h-screen bg-gray-900 text-white py-8 px-4">
+            <div className="max-w-7xl mx-auto">
+                <h1 className="text-4xl font-bold mb-8 text-center text-blue-300">Enhanced Voice Chatbot with PDF RAG</h1>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="space-y-6">
+                        <FileUpload onFileUpload={handleFileUpload} />
+                        <PDFSelector pdfs={pdfs} selectedPDF={selectedPDF} onSelect={setSelectedPDF} />
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                        <Microphone isListening={isListening} onClick={toggleListening} />
+                        <VoiceVisualizer isListening={isListening} />
+                        <InterruptButton onClick={interruptAI} isVisible={isResponding} />
+                        <StatusIndicator status={status} />
+                    </div>
+                    <div>
+                        <TranscriptDisplay transcript={transcript} />
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
 
 ReactDOM.render(<App />, document.getElementById('root'));
+
