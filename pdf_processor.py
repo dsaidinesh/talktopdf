@@ -6,8 +6,11 @@ from langchain_chroma import Chroma
 from langchain_groq import ChatGroq
 from langchain.chains import RetrievalQA
 from dotenv import load_dotenv
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
+
 
 load_dotenv()
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 def process_pdf(file_path, pdf_id):
@@ -17,7 +20,9 @@ def process_pdf(file_path, pdf_id):
     text_splitter = CharacterTextSplitter(chunk_size=2000, chunk_overlap=500)
     text_chunks = text_splitter.split_documents(documents)
     
-    embedding = HuggingFaceEmbeddings()
+    embedding = NVIDIAEmbeddings(model="NV-Embed-QA")
+
+
     
     persist_directory = f"doc_db_{pdf_id}"
     vectorstore = Chroma.from_documents(
